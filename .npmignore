@@ -2,8 +2,6 @@
 *.log
 npm-debug.log*
 yarn-error.log
-#src
-/src
 #config
 /__tests__
 /jest.config.json
