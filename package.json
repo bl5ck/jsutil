@@ -1,37 +1,13 @@
 {
-  "_from": "jsuti",
-  "_id": "jsuti@0.0.1-alpha.4",
-  "_inBundle": false,
-  "_integrity": "sha1-vKFY8DRJAmqZ4QiA8AsxE2gvBpE=",
-  "_location": "/jsuti",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "tag",
-    "registry": true,
-    "raw": "jsuti",
-    "name": "jsuti",
-    "escapedName": "jsuti",
-    "rawSpec": "",
-    "saveSpec": null,
-    "fetchSpec": "latest"
-  },
-  "_requiredBy": [
-    "#DEV:/",
-    "#USER"
-  ],
-  "_resolved": "https://registry.npmjs.org/jsuti/-/jsuti-0.0.1-alpha.4.tgz",
-  "_shasum": "bca158f03449026a99e10880f00b3113682f0691",
-  "_spec": "jsuti",
-  "_where": "E:\\Projects\\react-boilerplate-demo",
   "author": {
     "name": "Steve"
   },
   "bugs": {
-    "url": "https://github.com/jsynowiec/node-flowtype-boilerplate/issues"
+    "url": "https://github.com/bl5ck/jsutil/issues"
   },
-  "bundleDependencies": false,
   "dependencies": {
-    "babel-runtime": "~6.26.0"
+    "babel-runtime": "~6.26.0",
+    "chalk": "^2.4.1"
   },
   "deprecated": false,
   "description": "js utils",
@@ -56,13 +32,13 @@
   "engines": {
     "node": ">=8.9"
   },
-  "homepage": "https://github.com/jsynowiec/node-flowtype-boilerplate#readme",
+  "homepage": "https://github.com/bl5ck/jsutil#readme",
   "license": "MIT",
   "main": "./dist/src/index.js",
   "name": "jsuti",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jsynowiec/node-flowtype-boilerplate.git"
+    "url": "git+https://github.com/bl5ck/jsutil.git"
   },
   "scripts": {
     "build": "babel src/**/*.js -d dist",
@@ -74,7 +50,8 @@
     "test": "npm run test-only",
     "test-only": "jest --coverage",
     "test:watch": "jest --watch",
-    "typecheck": "flow check"
+    "typecheck": "flow check",
+    "prepare": "npm run build"
   },
   "version": "0.0.1-alpha.4"
 }
