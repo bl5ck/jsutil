@@ -1,0 +1,80 @@
+{
+  "_from": "jsuti",
+  "_id": "jsuti@0.0.1-alpha.4",
+  "_inBundle": false,
+  "_integrity": "sha1-vKFY8DRJAmqZ4QiA8AsxE2gvBpE=",
+  "_location": "/jsuti",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "jsuti",
+    "name": "jsuti",
+    "escapedName": "jsuti",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#DEV:/",
+    "#USER"
+  ],
+  "_resolved": "https://registry.npmjs.org/jsuti/-/jsuti-0.0.1-alpha.4.tgz",
+  "_shasum": "bca158f03449026a99e10880f00b3113682f0691",
+  "_spec": "jsuti",
+  "_where": "E:\\Projects\\react-boilerplate-demo",
+  "author": {
+    "name": "Steve"
+  },
+  "bugs": {
+    "url": "https://github.com/jsynowiec/node-flowtype-boilerplate/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "babel-runtime": "~6.26.0"
+  },
+  "deprecated": false,
+  "description": "js utils",
+  "devDependencies": {
+    "babel-cli": "~6.26.0",
+    "babel-core": "~6.26.3",
+    "babel-eslint": "~8.2.3",
+    "babel-jest": "~22.4.3",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-es2015-modules-commonjs": "~6.26.2",
+    "babel-plugin-transform-flow-strip-types": "~6.22.0",
+    "babel-plugin-transform-runtime": "~6.23.0",
+    "babel-preset-stage-3": "~6.24.1",
+    "eslint": "~4.19.1",
+    "eslint-config-airbnb-base": "~12.1.0",
+    "eslint-plugin-flowtype": "~2.46.3",
+    "eslint-plugin-import": "~2.11.0",
+    "flow-bin": "~0.71.0",
+    "jest": "~22.4.3"
+  },
+  "engineStrict": true,
+  "engines": {
+    "node": ">=8.9"
+  },
+  "homepage": "https://github.com/jsynowiec/node-flowtype-boilerplate#readme",
+  "license": "MIT",
+  "main": "./dist/src/index.js",
+  "name": "jsuti",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jsynowiec/node-flowtype-boilerplate.git"
+  },
+  "scripts": {
+    "build": "babel src/**/*.js -d dist",
+    "build:watch": "babel --watch src/**/*.js -d dist",
+    "clean": "rm -rf coverage dist tmp",
+    "lint": "eslint .",
+    "postlint": "npm run typecheck",
+    "pretest": "npm run lint",
+    "test": "npm run test-only",
+    "test-only": "jest --coverage",
+    "test:watch": "jest --watch",
+    "typecheck": "flow check"
+  },
+  "version": "0.0.1-alpha.4"
+}

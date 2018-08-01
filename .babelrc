@@ -1,0 +1,22 @@
+{
+  plugins: [
+    ['transform-es2015-modules-commonjs'],
+    ['transform-flow-strip-types'],
+    ['transform-async-to-generator'],
+    ['transform-class-properties'],
+    [
+      'transform-runtime',
+      {
+        polyfill: false,
+        regenerator: true,
+      },
+    ],
+  ],
+  env: {
+    production: {
+      comments: false,
+      minified: true,
+    },
+  },
+  presets: ['stage-3'],
+}
