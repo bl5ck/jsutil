@@ -33,7 +33,7 @@
     "node": ">=8.9"
   },
   "files": [
-    "dist"
+    "dist/**/*.js"
   ],
   "homepage": "https://github.com/bl5ck/jsutil#readme",
   "license": "MIT",
