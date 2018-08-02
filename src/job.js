@@ -46,7 +46,7 @@ export class Job {
    * @returns
    * @memberof Job
    */
-  static get(id) {
+  static get(id: string): Job {
     if (!Job.pool[id]) {
       throw new Error("[[[Can't get a job which is nonexistent in pool!]]]");
     }
@@ -63,7 +63,7 @@ export class Job {
    *
    * @memberof Job
    */
-  task: (...args: Array<any>) => Promise<any>;
+  task: ?(...args: Array<any>) => Promise<any>;
   /**
    * ID of current job
    *
@@ -102,28 +102,30 @@ export class Job {
    *
    * @memberof Job
    */
-  waiting;
+  waiting: ?Promise<any>;
   /**
    * Waiting Promise object resolver
    *
    * @memberof Job
    */
-  stopWaiting;
+  stopWaiting: ?Function;
   /**
    * Will this job be deleted when done?
    *
    * @memberof Job
    */
-  willDeleteWhenDone;
+  willDeleteWhenDone: ?boolean;
   /**
    * Is this job queued?
    *
    * @memberof Job
    */
-  get isQueued() {
+  executed: Promise<any>;
+  get isQueued(): boolean {
     return Job.queued.indexOf(this.id) !== -1;
   }
-  set isQueued(value) {
+  // eslint-disable-next-line class-methods-use-this
+  set isQueued(value: boolean) {
     throw new Error('[[[This is readonly property!]]]');
   }
   /**
@@ -131,10 +133,11 @@ export class Job {
    *
    * @memberof Job
    */
-  get isDoing() {
+  get isDoing(): boolean {
     return Job.doing.indexOf(this.id) !== -1;
   }
-  set isDoing(value) {
+  // eslint-disable-next-line class-methods-use-this
+  set isDoing(value: boolean) {
     throw new Error('[[[This is readonly property!]]]');
   }
   /**
@@ -142,10 +145,11 @@ export class Job {
    *
    * @memberof Job
    */
-  get isAvailable() {
+  get isAvailable(): boolean {
     return Job.available.indexOf(this.id) !== -1;
   }
-  set isAvailable(value) {
+  // eslint-disable-next-line class-methods-use-this
+  set isAvailable(value: boolean) {
     throw new Error('[[[This is readonly property!]]]');
   }
   /**
@@ -153,10 +157,11 @@ export class Job {
    *
    * @memberof Job
    */
-  get isInPool() {
+  get isInPool(): boolean {
     return Boolean(Job.pool[this.id]);
   }
-  set isInPool(value) {
+  // eslint-disable-next-line class-methods-use-this
+  set isInPool(value: boolean) {
     throw new Error('[[[This is readonly property!]]]');
   }
   /**
@@ -164,10 +169,11 @@ export class Job {
    *
    * @memberof Job
    */
-  get isAllDependenciesResolved() {
+  get isAllDependenciesResolved(): boolean {
     return this.dependencies.every((id) => this.isDependencyResolved(id));
   }
-  set isAllDependenciesResolved(value) {
+  // eslint-disable-next-line class-methods-use-this
+  set isAllDependenciesResolved(value: boolean) {
     throw new Error('[[[This is readonly property!]]]');
   }
   /**
@@ -175,10 +181,11 @@ export class Job {
    *
    * @memberof Job
    */
-  get hasSlot() {
+  get hasSlot(): boolean {
     return Job.doing.length < this.maxConcurrenceExecution;
   }
-  set hasSlot(value) {
+  // eslint-disable-next-line class-methods-use-this
+  set hasSlot(value: boolean) {
     throw new Error('[[[This is readonly property!]]]');
   }
   /**
@@ -186,10 +193,11 @@ export class Job {
    *
    * @memberof Job
    */
-  get remainingSlot() {
+  get remainingSlot(): number {
     return this.maxConcurrenceExecution - Job.doing.length;
   }
-  set remainingSlot(value) {
+  // eslint-disable-next-line class-methods-use-this
+  set remainingSlot(value: number) {
     throw new Error('[[[This is readonly property!]]]');
   }
   /**
@@ -197,18 +205,20 @@ export class Job {
    *
    * @memberof Job
    */
-  get isQueueEmpty() {
+  // eslint-disable-next-line class-methods-use-this
+  get isQueueEmpty(): boolean {
     return !Job.queued.length;
   }
-  set isQueueEmpty(value) {
+  // eslint-disable-next-line class-methods-use-this
+  set isQueueEmpty(value: boolean) {
     throw new Error('[[[This is readonly property!]]]');
   }
   constructor(
-    task: (...args: Array<any>) => any,
-    willStart = false,
-    willDeleteWhenDone = false,
-    dependencies: Array<string> = [],
-    maxConcurrenceExecution: number = undefined,
+    task: ?(...args: Array<any>) => any,
+    willStart: ?boolean = false,
+    willDeleteWhenDone: ?boolean = false,
+    dependencies: ?Array<string> = [],
+    maxConcurrenceExecution: ?number = undefined,
   ) {
     if (task) {
       this.registerTask(task, dependencies);
@@ -226,7 +236,7 @@ export class Job {
    * @param {Array<string>} [dependencies=[]]
    * @memberof Job
    */
-  registerTask(task: (...args: Array<any>) => Promise<any>, dependencies: Array<string> = []) {
+  registerTask(task: (...args: Array<any>) => Promise<any>, dependencies: ?Array<string> = []) {
     if (!this.task || !this.isQueued || !this.isDoing) {
       this.task = (...args) =>
         new Promise((resolve, reject) => {
@@ -237,7 +247,7 @@ export class Job {
           }
           resolve(result);
         });
-      if (dependencies.length) {
+      if (dependencies && dependencies.length) {
         this.dependOn(dependencies);
       }
       this.willBeAvailable();
@@ -286,7 +296,7 @@ export class Job {
    * @returns
    * @memberof Job
    */
-  start() {
+  start(): Promise<any> {
     if (!this.isAvailable) {
       throw new Error("[[[This job wasn't registered!]]]");
     }
@@ -357,7 +367,7 @@ export class Job {
    * @param {*} result
    * @memberof Job
    */
-  resolveDependency(id: string, result) {
+  resolveDependency(id: string, result: any) {
     this.dependenciesResult[id] = result;
   }
   /**
@@ -381,13 +391,16 @@ export class Job {
    * @returns
    * @memberof Job
    */
-  do(...args: Array<any>) {
+  do(...args: Array<any>): Promise<any> {
     if (!this.isAvailable) {
       throw new Error("[[[This job wasn't registered!]]]");
     }
     Job.doing.push(this.id);
     if (this.isQueued) {
       this.unQueue();
+    }
+    if (!this.task) {
+      throw new Error("[[[This job wasn't registered!]]]");
     }
     this.executed = this.task(...args)
       .then((result) =>
@@ -399,8 +412,8 @@ export class Job {
               }
               fromJob.resolveDependency(this.id, result);
               if (fromJob.isAllDependenciesResolved) {
-                const result = fromJob.dependencies.map((id) => fromJob.dependenciesResult[id]);
-                return execute(...result);
+                const res = fromJob.dependencies.map((id) => fromJob.dependenciesResult[id]);
+                return execute(...res);
               }
               return undefined;
             }))) ||
@@ -416,13 +429,13 @@ export class Job {
    * @returns
    * @memberof Job
    */
-  done(result) {
+  done(result: any): any {
     if (!this.isAvailable) {
       throw new Error("[[[This job wasn't registered!]]]");
     }
     Job.doing = Job.doing.filter((id) => id !== this.id);
     this.resolveQueue();
-    if (this.waiting) {
+    if (this.waiting && this.stopWaiting) {
       this.stopWaiting(result);
     }
     if (this.willDeleteWhenDone) {
@@ -447,7 +460,7 @@ export class Job {
    * @returns
    * @memberof Job
    */
-  queue() {
+  queue(): Promise<any> {
     if (!this.isAvailable) {
       throw new Error("[[[This job wasn't registered!]]]");
     }
@@ -536,7 +549,7 @@ export class Job {
    * @returns
    * @memberof Job
    */
-  isDependencyResolved(id) {
+  isDependencyResolved(id: string): boolean {
     return typeof this.dependenciesResult[id] !== 'undefined';
   }
   /**
@@ -545,7 +558,8 @@ export class Job {
    * @param {Error} error
    * @memberof Job
    */
-  catch(error: Error) {
+  catch = (error: Error) => {
     throw error;
-  }
+  };
 }
+export default Job;

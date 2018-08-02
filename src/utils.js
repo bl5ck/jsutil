@@ -1,32 +1,33 @@
 // @flow
 import chalk from 'chalk';
 
-function sleeper(ms): Promise {
+export function sleeper(ms: number): () => Promise<any> {
   return (x) => new Promise((resolve) => setTimeout(() => resolve(x), ms));
 }
 let msgCache = '';
-function log(msg = ''): { write: () => undefined } {
+export function log(msg: string = ''): { write: () => any } {
   if (msg) {
     msgCache = msgCache.concat(
       chalk.gray(`[${new Date().toString()}]`),
       msg.replace(/<([^ ]+) (((?!(\/>)).)*)\/>/g, (...args) => {
-        if (!args[1] || !args[2] || typeof chalk[args[1]] !== 'function') {
+        if (!args[1] || !args[2] || typeof (chalk: any)[args[1]] !== 'function') {
           return args[0];
         }
-        return chalk[args[1]](args[2]);
+        return (chalk: any)[args[1]](args[2]);
       }),
       '\n',
     );
   }
   return {
     write: () => {
+      // eslint-disable-next-line no-console
       console.log(msgCache);
       msgCache = '';
     },
   };
 }
 
-function random(start: number, end: number, uniqIn): number {
+export function random(start: number, end: number, uniqIn?: Array<number>): number {
   let result = Math.floor(Math.random() * (end - start) + start);
   if (!Array.isArray(uniqIn)) {
     return result;
@@ -43,13 +44,6 @@ function s4(): string {
     .substring(1);
 }
 
-function gUuidV4(): string {
+export function gUuidV4(): string {
   return `${s4() + s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
 }
-
-module.exports = {
-  log,
-  random,
-  sleeper,
-  gUuidV4,
-};
