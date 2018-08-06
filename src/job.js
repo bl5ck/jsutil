@@ -42,7 +42,7 @@ export class Job {
    * Get a job instance by ID
    *
    * @static
-   * @param {*} id
+   * @param {string} id
    * @returns
    * @memberof Job
    */
