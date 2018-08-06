@@ -1,5 +1,6 @@
 // @flow
 import chalk from 'chalk';
+import fs from 'fs';
 
 export function sleeper(ms: number): () => Promise<any> {
   return (x) => new Promise((resolve) => setTimeout(() => resolve(x), ms));
@@ -18,12 +19,23 @@ export function log(msg: string = ''): { write: () => any } {
       '\n',
     );
   }
-  return {
-    write: () => {
+  const clean = () => {
+    msgCache = '';
+  };
+  const write = (filePath: string) => {
+    if (!filePath) {
       // eslint-disable-next-line no-console
       console.log(msgCache);
-      msgCache = '';
-    },
+    } else {
+      fs.writeFileSync(filePath, msgCache);
+    }
+    clean();
+  };
+  const get = () => msgCache;
+  return {
+    write,
+    clean,
+    get,
   };
 }
 
