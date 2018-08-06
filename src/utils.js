@@ -163,5 +163,6 @@ export function processTags(tagName: string, content: string, args: Object): str
         }
       }
     })
+    .replace(/\$\{&#(\d+);\}/g, (match, dec) => String.fromCharCode(dec))
     .replace(/<newline \/>/g, '\n');
 }
