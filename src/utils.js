@@ -85,15 +85,14 @@ export function processTags(tagName: string, content: string, args: Object): str
   //  {/* <!-- /eject:args.title --> */}
 
   // eslint-disable-next-line max-len
-  const testString = `[ \t]*(// |{/\\* |)<!-- ${tagName}:(((?!-->).)*) -->(((?![ \t]*(// |)<!-- /${tagName}:).)*)[ \t]*(// |)<!-- /${tagName}:(((?!-->).)*) -->( \\*/}|)`;
+  const testString = `[ \t]*(// |{/\\* |)<!-- ${tagName}:(((?!-->).)*) -->([\\w\\W]*?)[ \t]*(// |)<!-- /${tagName}:(((?!-->).)*) -->( \\*/}|)`;
   const tagTest = new RegExp(testString, 'g');
   return content
-    .replace(/\r\n|\r|\n/g, '<newline />')
     .replace(tagTest, (matchString) => {
       const match = new RegExp(testString).exec(matchString);
       const openTag = match[2];
       const tagContent = match[4];
-      const closeTag = match[8];
+      const closeTag = match[6];
       if (!openTag || !tagContent || !closeTag || (openTag !== closeTag && !openTag.startsWith(`${closeTag} `))) {
         throw new Error(`There are invalid eject tags in your document!
         Please check if you missed content, spaces between "<!--" or "-->" and tag name,
@@ -167,8 +166,7 @@ export function processTags(tagName: string, content: string, args: Object): str
         }
       }
     })
-    .replace(/\$\{&#(\d+);\}/g, (match, dec) => String.fromCharCode(dec))
-    .replace(/<newline \/>/g, '\n');
+    .replace(/\$\{&#(\d+);\}/g, (match, dec) => String.fromCharCode(dec));
 }
 
 interface Step {
@@ -183,12 +181,14 @@ interface Step {
  * @param {Step & { parent?: Step, isExecuted?: boolean }} step
  * @param {number} index
  * @param {Array<Step>} steps
+ * @param {Array<Step>} rootSteps
  */
 export async function execStep(
   args: Object,
   step: Step & { parent?: Step, isExecuted?: boolean },
   index: number,
   steps: Array<Step>,
+  rootSteps?: Array<Step>,
 ): void {
   const {
     name, exec, undo, childProcesses, parent, isExecuted,
@@ -245,9 +245,9 @@ export async function execStep(
     // process childProcesses
     if (childProcesses && childProcesses.length) {
       const execChildProcess = (childName, childIndex, allSteps) => {
-        const childStep = steps.find(({ stepName }) => stepName === childName);
+        const childStep = (rootSteps || steps).find(({ name: stepName }) => stepName === childName);
         childStep.parent = step;
-        return execStep(args, childStep, childIndex, allSteps);
+        return execStep(args, childStep, childIndex, allSteps, steps);
       };
       if (!exectable) {
         log(`<green [Step ${name}]/> <yellow Waiting child processes until they are done... />`).write();
