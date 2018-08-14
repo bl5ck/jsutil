@@ -6,7 +6,7 @@ export function sleeper(ms: number): () => Promise<any> {
   return (x) => new Promise((resolve) => setTimeout(() => resolve(x), ms));
 }
 let msgCache = '';
-export function log(msg: string = ''): { write: () => any } {
+export function log(msg: string = ''): { write: (filePath?: string) => void } {
   if (msg) {
     msgCache = msgCache.concat(
       chalk.gray(`[${new Date().toString()}]`),
@@ -22,7 +22,7 @@ export function log(msg: string = ''): { write: () => any } {
   const clean = () => {
     msgCache = '';
   };
-  const write = (filePath: string) => {
+  const write = (filePath?: string) => {
     if (!filePath) {
       // eslint-disable-next-line no-console
       console.log(msgCache);
@@ -165,4 +165,124 @@ export function processTags(tagName: string, content: string, args: Object): str
     })
     .replace(/\$\{&#(\d+);\}/g, (match, dec) => String.fromCharCode(dec))
     .replace(/<newline \/>/g, '\n');
+}
+
+interface Step {
+  name: string;
+  exec: Function;
+  undo: Function;
+  childProcesses: Array<string>;
+}
+/**
+ * exec all steps
+ * @param {Object} args
+ * @param {Step & { parent?: Step, isExecuted?: boolean }} step
+ * @param {number} index
+ * @param {Array<Step>} steps
+ */
+export async function execStep(
+  args: Object,
+  step: Step & { parent?: Step, isExecuted?: boolean },
+  index: number,
+  steps: Array<Step>,
+): void {
+  const {
+    name, exec, undo, childProcesses, parent, isExecuted,
+  } = step;
+  if (isExecuted) {
+    return step.executed;
+  }
+  const errorHandle = async (error) => {
+    log(`<red [Step ${name}] Failed to execute because of following error:/>\n<white ${error.stack}/>`);
+    if (!undo) {
+      return undefined;
+    }
+    log(`<green [Step ${name}]/> <yellow Undoing step /><cyan ${name}/><yellow .../>`);
+    if (undo.constructor.name !== 'AsyncFunction') {
+      undo(args, step);
+      log(`<green [Step ${name}]/> <grey Step /><cyan ${name}/><grey  was undone. />`).write();
+      return undefined;
+    }
+    await undo(args, step);
+    log(`<green [Step ${name}]/> <grey Step /><cyan ${name}/><grey  was undone. />`).write();
+    return undefined;
+  };
+  try {
+    // eslint-disable-next-line no-param-reassign
+    step.isExecuted = true;
+    const exectable = Boolean(exec);
+    log(`<green [Step ${name}]/> <yellow Step /><cyan ${name}/><yellow  started />`).write();
+    const isAsync = exec && exec.constructor.name === 'AsyncFunction';
+    if (exec && exec.constructor.name === 'AsyncFunction') {
+      let checkingIndex = index;
+      let previousStep = steps[checkingIndex - 1];
+      // find closest previous sync step
+      while (
+        previousStep &&
+        !previousStep.isExecuted &&
+        ((previousStep.parent && parent) || (!previousStep.parent && !parent)) &&
+        (!previousStep.exec ||
+          !previousStep.childProcesses ||
+          !previousStep.childProcesses.length ||
+          previousStep.exec.constructor.name === 'AsyncFunction')
+      ) {
+        checkingIndex--;
+        previousStep = steps[checkingIndex];
+      }
+      // wait until closest previous sync step done
+      if (steps[checkingIndex + 1] && steps[checkingIndex + 1].executed) {
+        log(`<green [Step ${name}]/> <yellow Waiting for /><cyan ${
+          steps[checkingIndex + 1].name
+        }/><yellow until it is done... />`).write();
+        await steps[checkingIndex + 1].executed;
+        log(`<green [Step ${name}]/> <grey Step /><cyan ${steps[checkingIndex + 1].name}/><grey  was done. />`).write();
+      }
+    }
+    // process childProcesses
+    if (childProcesses && childProcesses.length) {
+      const execChildProcess = (childName, childIndex, allSteps) => {
+        const childStep = allSteps.find(({ stepName }) => stepName === childName);
+        childStep.parent = step;
+        return execStep(args, childStep, childIndex, allSteps);
+      };
+      if (!exectable) {
+        log(`<green [Step ${name}]/> <yellow Waiting child processes until they are done... />`).write();
+        // eslint-disable-next-line no-param-reassign
+        step.executed = Promise.all(childProcesses.map(execChildProcess)).then((result) => {
+          log(`<green [Step ${name}]/> <grey Child processes were done. />`).write();
+          log(`<green [Step ${name}]/> <grey Step /><cyan ${name}/><grey  executed. />`).write();
+          return result;
+        });
+
+        return step.executed;
+      }
+      log(`<green [Step ${name}]/> <yellow Waiting child processes until they are done... />`).write();
+
+      await Promise.all(childProcesses.map(execChildProcess));
+
+      log(`<green [Step ${name}]/> <grey Child processes were done. />`).write();
+    }
+    if (exectable) {
+      log(`<green [Step ${name}]/> <yellow Step /><cyan ${name}/><yellow  is executing... />`).write();
+
+      if (!isAsync) {
+        // eslint-disable-next-line no-param-reassign
+        step.executed = exec(args, step);
+        log(`<green [Step ${name}]/> <grey Step /><cyan ${name}/><grey  executed. />`).write();
+        return step.executed;
+      }
+      // eslint-disable-next-line no-param-reassign
+      step.executed = exec(args, step)
+        .then((result) => {
+          log(`<green [Step ${name}]/> <grey Step /><cyan ${name}/><grey  executed. />`).write();
+          return result;
+        })
+        .catch((error) => errorHandle(error));
+      return step.executed;
+    }
+    log(`<green [Step ${name}]/> <grey Step /><cyan ${name}/><grey  executed. />`).write();
+    return undefined;
+  } catch (error) {
+    return errorHandle(error);
+  }
 }
