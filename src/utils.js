@@ -79,7 +79,11 @@ export function processTags(tagName: string, content: string, args: Object): str
    *  // <!-- eject:args.title -->
    *  pageTitle = 'My title';
    *  // <!-- /eject:args.title -->
-   */
+   * Support in JSX: */
+  //  {/* <!-- eject:args.title --> */}
+  //  <title>My title</title>
+  //  {/* <!-- /eject:args.title --> */}
+
   // eslint-disable-next-line max-len
   const testString = `[ \t]*(// |{/\\* |)<!-- ${tagName}:(((?!-->).)*) -->(((?![ \t]*(// |)<!-- /${tagName}:).)*)[ \t]*(// |)<!-- /${tagName}:(((?!-->).)*) -->( \\*/}|)`;
   const tagTest = new RegExp(testString, 'g');
