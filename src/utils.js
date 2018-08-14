@@ -241,7 +241,7 @@ export async function execStep(
     // process childProcesses
     if (childProcesses && childProcesses.length) {
       const execChildProcess = (childName, childIndex, allSteps) => {
-        const childStep = allSteps.find(({ stepName }) => stepName === childName);
+        const childStep = steps.find(({ stepName }) => stepName === childName);
         childStep.parent = step;
         return execStep(args, childStep, childIndex, allSteps);
       };
