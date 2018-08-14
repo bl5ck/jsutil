@@ -175,6 +175,65 @@ interface Step {
   undo: Function;
   childProcesses: Array<string>;
 }
+
+export function finalizeArgs(args: Object, config: Array<Step>) {
+  const getArg = (key) => config.find(({ arg, abbr }) => key === arg || key === abbr);
+
+  const possibleArgsKeys = [...config.map(({ arg, abbr }) => [arg, abbr])];
+
+  // pair params and values
+  process.argv.forEach((key, index, keys) => {
+    const paramKeyRegex = /^-{1,2}/;
+    if (!paramKeyRegex.test(key)) {
+      // key is param's value
+      return;
+    }
+    // key is param's name
+    const arg = getArg(key);
+    if (!arg) {
+      const suggestion = possibleArgsKeys.find((argKey) => argKey.contains(key));
+      throw new Error(`Argument ${key} is invalid!`.concat(!suggestion ? '' : `Did you mean "${suggestion}"?`));
+    }
+    const { name, default: defaultValue } = arg;
+    const valueIndex = index + 1;
+    if (!keys[valueIndex] || paramKeyRegex.test(keys[valueIndex])) {
+      // value is not available
+      if (typeof defaultValue === 'undefined') {
+        throw new Error(`Argument ${key}'s value must be specified!`);
+      }
+      // eslint-disable-next-line no-param-reassign
+      args[name] = defaultValue;
+      return;
+    }
+    // eslint-disable-next-line no-param-reassign
+    args[name] = keys[valueIndex];
+  });
+
+  /**
+   * Get current value or default value of a param
+   * @param key {string} param's key
+   */
+  const valueOrDefault = (key, arg) => {
+    if (typeof args[key] !== 'function') {
+      if (typeof args[key] !== 'undefined') {
+        return args[key];
+      }
+      if (typeof arg.default !== 'function') {
+        return arg.default;
+      }
+      return arg.default(args);
+    }
+    // default value is a function
+    return args[key](args);
+  };
+
+  // finalize args
+  config.forEach((arg) => {
+    // eslint-disable-next-line no-param-reassign
+    args[arg.name] = valueOrDefault(arg.name, arg);
+  });
+}
+
 /**
  * exec all steps
  * @param {Object} args
