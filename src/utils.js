@@ -10,7 +10,7 @@ export function log(msg: string = ''): { write: (filePath?: string) => void } {
   if (msg) {
     msgCache = msgCache.concat(
       chalk.gray(`[${new Date().toString()}]`),
-      msg.replace(/<([^ ]+) (((?!(\/>))[\w\W]*))\/>/g, (...args) => {
+      msg.replace(/<([^ ]+) (((?!(\/>))[\w\W]*?))\/>/g, (...args) => {
         if (!args[1] || !args[2] || typeof (chalk: any)[args[1]] !== 'function') {
           return args[0];
         }
