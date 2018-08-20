@@ -10,7 +10,7 @@ export function log(msg: string = ''): { write: (filePath?: string) => void } {
   if (msg) {
     msgCache = msgCache.concat(
       chalk.gray(`[${new Date().toString()}]`),
-      msg.replace(/<([^ ]+) (((?!(\/>)).)*)\/>/g, (...args) => {
+      msg.replace(/<([^ ]+) (((?!(\/>))[\w\W]*))\/>/g, (...args) => {
         if (!args[1] || !args[2] || typeof (chalk: any)[args[1]] !== 'function') {
           return args[0];
         }
@@ -87,16 +87,20 @@ export function processTags(tagName: string, content: string, args: Object): str
   // eslint-disable-next-line max-len
   const testString = `[ \t]*(// |{/\\* |)<!-- ${tagName}:(((?!-->).)*) -->([\\w\\W]*?)[ \t]*(// |)<!-- /${tagName}:(((?!-->).)*) -->( \\*/}|)`;
   const tagTest = new RegExp(testString, 'g');
+  const invalidError = new Error(`There are invalid eject tags in your document!
+      Please check if you missed content, spaces between "<!--" or "-->" and tag name,
+        missed or added wrong closing tags.`);
   return content
     .replace(tagTest, (matchString) => {
       const match = new RegExp(testString).exec(matchString);
+      if (!match) {
+        throw invalidError;
+      }
       const openTag = match[2];
       const tagContent = match[4];
       const closeTag = match[6];
       if (!openTag || !tagContent || !closeTag || (openTag !== closeTag && !openTag.startsWith(`${closeTag} `))) {
-        throw new Error(`There are invalid eject tags in your document!
-        Please check if you missed content, spaces between "<!--" or "-->" and tag name,
-          missed or added wrong closing tags.`);
+        throw invalidError;
       }
       const propMatch = new RegExp(`^${closeTag} ((( *)(([a-z-]+)='([^']+)'))*)`, 'g');
       let propsString = '';
@@ -116,6 +120,9 @@ export function processTags(tagName: string, content: string, args: Object): str
             // reset interator, check https://stackoverflow.com/questions/11477415/why-does-javascripts-regex-exec-not-always-return-the-same-value
             propTest.lastIndex = 0;
             const propParse = propTest.exec(propString);
+            if (!propParse) {
+              throw invalidError;
+            }
             const propKey = propParse[3];
             let propValue = propParse[4];
             if (propKey !== 'if') {
@@ -174,12 +181,22 @@ interface Step {
   exec: Function;
   undo: Function;
   childProcesses: Array<string>;
+  parent?: Step;
+  isExecuted?: boolean;
+  executed?: Object;
 }
 
-export function finalizeArgs(args: Object, config: Array<Step>) {
+interface ArgConfig {
+  name: string;
+  arg: string;
+  abbr?: string;
+  default?: Function;
+}
+
+export function finalizeArgs(args: Object, config: Array<ArgConfig>) {
   const getArg = (key) => config.find(({ arg, abbr }) => key === arg || key === abbr);
 
-  const possibleArgsKeys = [...config.map(({ arg, abbr }) => [arg, abbr])];
+  const possibleArgsKeys: Array<string> = [].concat(...config.map(({ arg, abbr }) => [arg, abbr || '']));
 
   // pair params and values
   process.argv.forEach((key, index, keys) => {
@@ -191,7 +208,7 @@ export function finalizeArgs(args: Object, config: Array<Step>) {
     // key is param's name
     const arg = getArg(key);
     if (!arg) {
-      const suggestion = possibleArgsKeys.find((argKey) => argKey.contains(key));
+      const suggestion = possibleArgsKeys.find((argKey) => argKey && argKey.includes(key));
       throw new Error(`Argument ${key} is invalid!`.concat(!suggestion ? '' : `Did you mean "${suggestion}"?`));
     }
     const { name, default: defaultValue } = arg;
@@ -237,18 +254,18 @@ export function finalizeArgs(args: Object, config: Array<Step>) {
 /**
  * exec all steps
  * @param {Object} args
- * @param {Step & { parent?: Step, isExecuted?: boolean }} step
+ * @param {Step} step
  * @param {number} index
  * @param {Array<Step>} steps
  * @param {Array<Step>} rootSteps
  */
 export async function execStep(
   args: Object,
-  step: Step & { parent?: Step, isExecuted?: boolean },
+  step: Step,
   index: number,
   steps: Array<Step>,
   rootSteps?: Array<Step>,
-): void {
+): any {
   const {
     name, exec, undo, childProcesses, parent, isExecuted,
   } = step;
@@ -278,7 +295,7 @@ export async function execStep(
     const isAsync = exec && exec.constructor.name === 'AsyncFunction';
     if (exec && exec.constructor.name === 'AsyncFunction') {
       let checkingIndex = index;
-      let previousStep = steps[checkingIndex - 1];
+      let previousStep: Step = steps[checkingIndex - 1];
       // find closest previous sync step
       while (
         previousStep &&
@@ -303,10 +320,16 @@ export async function execStep(
     }
     // process childProcesses
     if (childProcesses && childProcesses.length) {
-      const execChildProcess = (childName, childIndex, allSteps) => {
-        const childStep = (rootSteps || steps).find(({ name: stepName }) => stepName === childName);
+      const execChildProcess = (childName, childIndex, stepNames) => {
+        const allSteps = rootSteps || steps;
+        const childStep = allSteps.find(({ name: stepName }) => stepName === childName);
+        if (!childStep) {
+          return undefined;
+        }
         childStep.parent = step;
-        return execStep(args, childStep, childIndex, allSteps, steps);
+        const childSteps: Array<Step | void> = stepNames.map((childStepName: string) =>
+          allSteps.find((stepName) => childStepName === stepName));
+        return execStep(args, childStep, childIndex, childSteps.filter(Boolean), steps);
       };
       if (!exectable) {
         log(`<green [Step ${name}]/> <yellow Waiting child processes until they are done... />`).write();

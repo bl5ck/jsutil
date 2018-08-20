@@ -26,7 +26,7 @@
     "eslint-config-airbnb-base": "~12.1.0",
     "eslint-plugin-flowtype": "~2.46.3",
     "eslint-plugin-import": "~2.11.0",
-    "flow-bin": "~0.71.0",
+    "flow-bin": "^0.78.0",
     "jest": "~22.4.3"
   },
   "engineStrict": true,
@@ -43,7 +43,9 @@
   },
   "scripts": {
     "build": "babel src/**/*.js -d dist",
+    "build:flow": "flow gen-flow-files ./src/index.js > ./dist/src/index.js.flow",
     "build:watch": "babel --watch src/**/*.js -d dist",
+    "flow": "flow",
     "clean": "rm -rf coverage dist tmp",
     "lint": "eslint .",
     "postlint": "npm run typecheck",
