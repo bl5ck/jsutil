@@ -50,13 +50,13 @@
     "flow": "flow",
     "clean": "rm -rf coverage dist tmp",
     "lint": "eslint .",
-    "postlint": "npm run typecheck",
-    "pretest": "npm run lint",
-    "test": "npm run test-only",
+    "postlint": "yarn typecheck",
+    "pretest": "yarn lint",
+    "test": "yarn test-only",
     "test-only": "jest --coverage",
     "test:watch": "jest --watch",
     "typecheck": "flow check",
-    "prepublishOnly": "npm i --production && npm run build"
+    "prepublishOnly": "yarn install --production && yarn build"
   },
-  "version": "0.0.1-alpha.29"
+  "version": "0.0.1-alpha.30"
 }

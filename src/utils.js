@@ -273,7 +273,7 @@ export async function execStep(
     return step.executed;
   }
   const errorHandle = async (error) => {
-    log(`<red [Step ${name}] Failed to execute because of following error:/>\n<white ${error.stack}/>`);
+    log(`<red [Step ${name}] Failed to execute because of following error: ${JSON.stringify(error, null, 2)}/>\n<white ${error.stack || ''}/>`);
     if (!undo) {
       return undefined;
     }
